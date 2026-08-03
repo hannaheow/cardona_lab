@@ -1,0 +1,2 @@
+"Animal_ID","Sex","DOB","Age_weeks","Genotype","Diabetes_Status","Diet_Group","Diet_Length","Diet_Start","Diet_End","Glucose","Biological_Replica","Technical_Replica","Tissue","Region","Tissue_Processing","Experiment_Start","Experiment_End","Stain_Researcher","Stain_Date","Imagist","Imaging_Date","Image_ID","IBA1_Count","NeuN_Count","x","y","z","Notes"
+"asdf","F",2026-08-03,NA,"CamK2a+/ctFKN+","Diabetic","Normal Diet","4 weeks",2026-08-03,2026-08-03,1,"1","B1","Brain","Brain_LGN","free_floating",2026-08-03,2026-08-03,"",2026-08-03,"",2026-08-03,"",NA,NA,512,512,NA,""
