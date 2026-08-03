@@ -232,7 +232,18 @@ server <- function(input, output, session){
       read.csv(
         "data/animal_database_clean.csv",
         stringsAsFactors = FALSE
-      )
+      ) %>%
+        mutate(
+          dob = as.Date(dob),
+          experiment_start_date = as.Date(experiment_start_date),
+          experiment_end_date = as.Date(experiment_end_date),
+          diet_start_date = as.Date(diet_start_date),
+          diet_end_date = as.Date(diet_end_date),
+          date_tissue_sectioning = as.Date(date_tissue_sectioning),
+          stain_completion_date = as.Date(stain_completion_date),
+          imaging_date = as.Date(imaging_date),
+          notes = as.character(notes)
+        )
     )
     
   } else {
@@ -260,10 +271,10 @@ server <- function(input, output, session){
     tibble(
       
       animal_id = input$animal,
-      sex = input$sex,
-      id_sex = paste(input$animal, input$sex),
+      #sex = as.character(input$sex),
+      #id_sex = paste(input$animal, input$sex),
       
-      dob = input$dob,
+      dob = as.Date(input$dob),
       age_weeks = input$age,
       
       genotype = input$genotype,
@@ -283,7 +294,7 @@ server <- function(input, output, session){
       diabetes_status = input$diabetes_status,
       glucose_mg_dl = input$glucose,
       
-      biological_replica = input$biological_replica,
+      biological_replica = as.numeric(input$biological_replica),
       
       diet_group = input$diet_type,
       diet_start_date = input$diet_start,
