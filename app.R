@@ -13,11 +13,14 @@ library(dplyr)
 library(ggplot2)
 
 ui <- fluidPage(
-  
-  titlePanel("Animal Imaging Metadata"),
-  
-  sidebarLayout(
+  uiOutput("app_ui")
+)
+authenticated_ui <- function() {
+  fluidPage(
+    titlePanel("Cardona Lab Data Collection"),
     
+    sidebarLayout(
+      
     sidebarPanel(
       
       h4("Animal Information"),
@@ -188,6 +191,11 @@ ui <- fluidPage(
         "Submit Entry"
       ),
       
+      downloadButton(
+        "download_data",
+        "Download All Data"
+      ),
+      
       hr(),
       
       
@@ -248,8 +256,63 @@ ui <- fluidPage(
   )
   
 )
+}
 
 server <- function(input, output, session){
+  
+  password_correct <- reactiveVal(FALSE)
+  
+  output$app_ui <- renderUI({
+    
+    if(password_correct()){
+      
+      authenticated_ui()
+      
+    } else {
+      
+      fluidPage(
+        
+        titlePanel("Cardona Lab Data Collection"),
+        
+        textInput(
+          "password",
+          "Password"
+        ),
+        
+        actionButton(
+          "login",
+          "Login"
+        )
+        
+      )
+      
+    }
+    
+  })
+  
+  observeEvent(input$login,{
+    
+    if(input$password == Sys.getenv("CARDONA_LAB_PASSWORD")){
+      
+      password_correct(TRUE)
+      
+      showNotification(
+        "Login successful",
+        type = "message"
+      )
+      
+    } else {
+      
+      showNotification(
+        "Incorrect password",
+        type = "error"
+      )
+      
+    }
+    
+  })
+  
+  
   if (!dir.exists("data")) {
     dir.create("data")
   }
@@ -480,6 +543,8 @@ server <- function(input, output, session){
   
   observeEvent(input$submit,{
     
+    req(password_correct())
+    
     req(iv$is_valid())
     
     db <- database()
@@ -632,6 +697,28 @@ server <- function(input, output, session){
     }
     
   })
+  
+  output$download_data <- downloadHandler(
+    
+    filename = function() {
+      paste0(
+        "animal_database_",
+        Sys.Date(),
+        ".csv"
+      )
+    },
+    
+    content = function(file) {
+      
+      write.csv(
+        database(),
+        file,
+        row.names = FALSE
+      )
+      
+    }
+    
+  )
   
 }
 
