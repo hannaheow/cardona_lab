@@ -125,12 +125,6 @@ authenticated_ui <- function() {
       
       dateInput("exp_end","Experiment End"),
       
-     
-      
-    ),
-    
-    mainPanel(
-      
       h4("Imaging"),
       
       selectInput(
@@ -190,7 +184,13 @@ authenticated_ui <- function() {
       actionButton(
         "submit",
         "Submit Entry"
-      ),
+      )
+      
+    ),
+    
+    mainPanel(
+      
+     
       
       downloadButton(
         "download_data",
