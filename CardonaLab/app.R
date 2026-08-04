@@ -265,6 +265,7 @@ server <- function(input, output, session){
         mutate(
           dob = as.Date(dob),
           sex = as.character(sex), 
+          image_id = as.character(image_id),
           experiment_start_date = as.Date(experiment_start_date),
           experiment_end_date = as.Date(experiment_end_date),
           diet_start_date = as.Date(diet_start_date),
@@ -286,10 +287,7 @@ server <- function(input, output, session){
     
     req(input$plot_variable)
     
-    df = read.csv(
-      "data/animal_database_clean.csv",
-      stringsAsFactors = FALSE
-    ) %>%
+    df <- database() %>%
       mutate(
         glucose_mg_dl = as.numeric(glucose_mg_dl),
         neun_count = as.numeric(neun_count),
@@ -314,14 +312,21 @@ server <- function(input, output, session){
     } else {
       
       df %>%
-        group_by(across(all_of(grouping))) %>%
+        group_by(
+          animal_id,
+          across(all_of(grouping))
+        ) %>%
         summarise(
-          mean_value = mean(
+          animal_mean = mean(
             .data[[input$plot_variable]],
-            #.data[["glucose_mg_dl"]], 
             na.rm = TRUE
           ),
-          .groups = "drop"
+          .groups="drop"
+        ) %>%
+        group_by(across(all_of(grouping))) %>%
+        summarise(
+          mean_value = mean(animal_mean, na.rm=TRUE),
+          .groups="drop"
         )
       
     }
@@ -383,7 +388,7 @@ server <- function(input, output, session){
       
       region = input$region,
       
-      image_id = input$imageid,
+      image_id = as.character(input$imageid),
       
       technical_replica = input$technical_replica,
       
@@ -538,11 +543,21 @@ server <- function(input, output, session){
       
     )
     
-    
+    new_row <- new_row %>%
+      mutate(
+        across(
+          c(animal_id, sex, id_sex, genotype, treatment_group,
+            time_point, diabetes_status, diet_group,
+            tissue_type, tissue_processing, region,
+            technical_replica, stain_researcher,
+            imagist, notes),
+          as.character
+        )
+      )
     
     db <- bind_rows(
       database(),
-      data_entry()
+      new_row
     )
     
     database(db)

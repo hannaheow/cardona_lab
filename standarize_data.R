@@ -3,7 +3,7 @@ library(lubridate)
 
 # Load existing database
 animal_database <- read_csv(
-  "data/animal_database.csv",
+  "CardonaLab/data/animal_database.csv",
   show_col_types = FALSE
 )
 
@@ -182,5 +182,5 @@ animal_database <- animal_database %>%
 
 write_csv(
   animal_database,
-  "data/animal_database_clean.csv"
+  "CardonaLab/data/animal_database_clean.csv"
 )
