@@ -18,6 +18,7 @@ ui <- fluidPage(
 authenticated_ui <- function() {
   fluidPage(
     titlePanel("Cardona Lab Data Collection"),
+    uiOutput("data_source_banner"),
     
     sidebarLayout(
       
@@ -376,6 +377,38 @@ server <- function(input, output, session){
     database(tibble())
     
   }
+  
+  output$data_source_banner <- renderUI({
+    
+    if (database_file == "test_data/animal_database_test.csv") {
+      
+      div(
+        style = "
+        background-color: #fff3cd;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        font-weight: bold;
+      ",
+        "⚠️ TEST DATA MODE: This app is currently using dummy data."
+      )
+      
+    } else {
+      
+      div(
+        style = "
+        background-color: #d4edda;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        font-weight: bold;
+      ",
+        "✓ REAL DATA MODE: This app is connected to the animal database."
+      )
+      
+    }
+    
+  })
   
   plot_data <- reactive({
     
