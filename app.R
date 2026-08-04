@@ -313,21 +313,52 @@ server <- function(input, output, session){
   })
   
   
-  if (!dir.exists("data")) {
-    dir.create("data")
-  }
   database <- reactiveVal()
   
-  if(file.exists("data/animal_database_clean.csv")){
+  
+  # Decide which database to load
+  if (file.exists("data/animal_database_clean.csv")) {
+    
+    database_file <- "data/animal_database_clean.csv"
+    
+  } else if (file.exists("test_data/animal_database_test.csv")) {
+    
+    database_file <- "test_data/animal_database_test.csv"
+    
+  } else {
+    
+    database_file <- NULL
+    
+  }
+  
+  # Print which database is being used
+  if (database_file == "test_data/animal_database_test.csv") {
+    
+    message("Using TEST DATA")
+    
+  } else if (database_file == "data/animal_database_clean.csv") {
+    
+    message("Using REAL DATA")
+    
+  } else {
+    
+    message("No database found")
+    
+  }
+  
+  
+  
+  # Load database
+  if (!is.null(database_file)) {
     
     database(
       read.csv(
-        "data/animal_database_clean.csv",
+        database_file,
         stringsAsFactors = FALSE
       ) %>%
         mutate(
           dob = as.Date(dob),
-          sex = as.character(sex), 
+          sex = as.character(sex),
           image_id = as.character(image_id),
           experiment_start_date = as.Date(experiment_start_date),
           experiment_end_date = as.Date(experiment_end_date),
