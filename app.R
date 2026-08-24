@@ -1,789 +1,381 @@
+# ============================================================
+# ANIMAL DATA PLOTTER
+# ============================================================
 #
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
+# This Shiny app allows a user to:
 #
-# Find out more about building applications with Shiny here:
+#   1. Upload an animal database CSV
+#   2. Automatically clean and standardize the data
+#   3. Choose which measurement to plot
+#   4. Generate a plot
+#   5. Download the cleaned data
+#   6. Download the resulting plot
 #
-#    https://shiny.posit.co/
+# The actual data cleaning and plotting are handled by
+# functions stored in the R/ folder:
 #
+#   standardize_animal_data.R
+#   make_animal_plot.R
+#
+# ============================================================
+
+# ------------------------------------------------------------
+# Load packages
+# ------------------------------------------------------------
 
 library(shiny)
-library(shinyvalidate)
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
+
+
+# ============================================================
+# USER INTERFACE
+# ============================================================
 
 ui <- fluidPage(
-  uiOutput("app_ui")
-)
-authenticated_ui <- function() {
-  fluidPage(
-    titlePanel("Cardona Lab Data Collection"),
-    uiOutput("data_source_banner"),
-    
-    sidebarLayout(
-      
-    sidebarPanel(
-      
-      h4("Animal Information"),
-      
-      textInput("animal","Animal ID"),
-      
-      radioButtons(
-        "sex",
-        "Sex",
-        choices = c("F","M"),
-        inline = TRUE
-      ),
-      
-      dateInput(
-        "dob",
-        "Date of Birth"
-      ),
-      
-      numericInput(
-        "age",
-        "Age (weeks)",
-        value = NA,
-        min = 0
-      ),
-      
-      selectInput(
-        "genotype",
-        "Genotype",
-        choices = c(
-          "CamK2a+/ctFKN+",
-          "CamK2a+/ctFKN-",
-          "CamK2a-/ctFKN+",
-          "CamK2a-/ctFKN-",
-          "Other"
-        )
-      ),
-      
-      selectInput(
-        "diet_type",
-        "Diet Type",
-        choices = c(
-          "Normal Diet",
-          "Dox Diet", 
-          "Other"
-        )
-      ),
-      
-      selectInput(
-        "diet_length",
-        "Weeks of Diet",
-        choices = c(
-          "4 weeks" = "4w",
-          "10 weeks" = "10w", 
-          "Other"
-        )
-      ),
-      
-      dateInput("diet_start","Diet Start"),
-      
-      dateInput("diet_end","Diet End"),
-      
-      selectInput(
-        "diabetes_status",
-        "Diabetes Status",
-        choices = c(
-          "Diabetic",
-          "Nondiabetic"
-        )
-      ),
-      
-      numericInput(
-        "glucose",
-        "Glucose (mg/dL)",
-        value = NA,
-        min = 0
-      ),
-      
-      selectInput(
-        "biological_replica",
-        "Biological Replica",
-        choices = c(
-          1:100
-        )
-      ),
-      
-      selectInput(
-        "technical_replica",
-        "Technical Replica",
-        choices = c(
-          "B1", "B2", "B3", "B4", "B5", "B6", 
-          "C1", "C2", "C3", "C4", "C5", "C6", 
-          "D1", "D2", "D3", "D4", "D5", "D6"
-        )
-      ),
-      
-      hr(),
-      
-      h4("Experiment"),
-      
-      dateInput("exp_start","Experiment Start"),
-      
-      dateInput("exp_end","Experiment End"),
-      
-      h4("Imaging"),
-      
-      selectInput(
-        "tissue",
-        "Tissue Type",
-        c(
-          "Brain",
-          "Retina"
-        )
-      ),
-      
-      selectInput(
-        "region",
-        "Region",
-        c(
-          "Brain_LGN",
-          "Brain_SC",
-          "Retina_Central",
-          "Retina_Peripheral"
-        )
-      ),
-      
-      selectInput(
-        "tissue_processing",
-        "Tissue Processing",
-        c(
-          "free_floating", "WM", "OCT"
-        )
-      ),
-      
-      dateInput("stain_completion_date", "Date of Stain Completion"), 
-      textInput("stain_researcher", "Stain Researcher"), 
-      dateInput("imaging_date", "Date of Imaging"),
-      
-      textInput("imagist", "Imagist"), 
-      
-      textInput("imageid","Image ID"),
-      
-      numericInput("iba1_count","IBA1 Count",NA,0),
-      
-      numericInput("NeuN_count","NeuN Count",NA,0),
-      
-      numericInput("x_confocal","X confocal", 512),
-      
-      numericInput("y_confocal","Y confocal",512),
-      
-      numericInput("z_confocal","Z confocal",NA),
-      
-      
-      
-      textAreaInput(
-        "notes",
-        "Notes",
-        rows = 5
-      ),
-      
-      actionButton(
-        "submit",
-        "Submit Entry"
-      )
-      
-    ),
-    
-    mainPanel(
-      
-     
-      
-      downloadButton(
-        "download_data",
-        "Download All Data"
-      ),
-      
-      hr(),
-      
-      
-      tabsetPanel(
-        
-        tabPanel(
-          "Current Entry",
-          tableOutput("preview")
-        ),
-        
-        tabPanel(
-          "Glucose",
-          tableOutput("glucose_table")
-        ),
-        
-        tabPanel(
-          "NeuN",
-          tableOutput("neun_table")
-        ),
-        
-        tabPanel(
-          "IBA1",
-          tableOutput("iba1_table")
-        ),
-        tabPanel(
-          "Visualizations",
-          
-          selectInput(
-            "plot_variable",
-            "Outcome",
-            choices = c(
-              "Glucose" = "glucose_mg_dl",
-              "NeuN Count" = "neun_count",
-              "IBA1 Count" = "iba1_count"
-            )
-          ),
-          
-          checkboxGroupInput(
-            "group_vars",
-            "Group By",
-            choices = c(
-              "Diabetes Status" = "diabetes_status",
-              "Diet Group" = "diet_group",
-              "Time Point" = "time_point",
-              "Sex" = "sex",
-              "Region" = "region"
-            ),
-            selected = "diabetes_status"
-          ),
-          
-          plotOutput("summary_plot", height = "600px")
-        )
-        
-      )
-      
-    )
-    
-  )
-  
-)
-}
+  # ----------------------------------------------------------
+  # Title
+  # ----------------------------------------------------------
 
-server <- function(input, output, session){
-  
-  password_correct <- reactiveVal(FALSE)
-  
-  output$app_ui <- renderUI({
-    
-    if(password_correct()){
-      
-      authenticated_ui()
-      
-    } else {
-      
-      fluidPage(
-        
-        titlePanel("Cardona Lab Data Collection"),
-        
-        textInput(
-          "password",
-          "Password"
-        ),
-        
-        actionButton(
-          "login",
-          "Login"
-        )
-        
-      )
-      
-    }
-    
-  })
-  
-  observeEvent(input$login,{
-    
-    if(input$password == Sys.getenv("CARDONA_LAB_PASSWORD")){
-      
-      password_correct(TRUE)
-      
-      showNotification(
-        "Login successful",
-        type = "message"
-      )
-      
-    } else {
-      
-      showNotification(
-        "Incorrect password",
-        type = "error"
-      )
-      
-    }
-    
-  })
-  
-  
-  database <- reactiveVal()
-  
-  
-  # Decide which database to load
-  if (file.exists("data/animal_database_clean.csv")) {
-    
-    database_file <- "data/animal_database_clean.csv"
-    
-  } else if (file.exists("test_data/animal_database_test.csv")) {
-    
-    database_file <- "test_data/animal_database_test.csv"
-    
-  } else {
-    
-    database_file <- NULL
-    
-  }
-  
-  # Print which database is being used
-  if (database_file == "test_data/animal_database_test.csv") {
-    
-    message("Using TEST DATA")
-    
-  } else if (database_file == "data/animal_database_clean.csv") {
-    
-    message("Using REAL DATA")
-    
-  } else {
-    
-    message("No database found")
-    
-  }
-  
-  
-  
-  # Load database
-  if (!is.null(database_file)) {
-    
-    database(
-      read.csv(
-        database_file,
-        stringsAsFactors = FALSE
-      ) %>%
-        mutate(
-          dob = as.Date(dob),
-          sex = as.character(sex),
-          image_id = as.character(image_id),
-          experiment_start_date = as.Date(experiment_start_date),
-          experiment_end_date = as.Date(experiment_end_date),
-          diet_start_date = as.Date(diet_start_date),
-          diet_end_date = as.Date(diet_end_date),
-          date_tissue_sectioning = as.Date(date_tissue_sectioning),
-          stain_completion_date = as.Date(stain_completion_date),
-          imaging_date = as.Date(imaging_date),
-          notes = as.character(notes)
-        )
-    )
-    
-  } else {
-    
-    database(tibble())
-    
-  }
-  
-  output$data_source_banner <- renderUI({
-    
-    if (database_file == "test_data/animal_database_test.csv") {
-      
-      div(
-        style = "
-        background-color: #fff3cd;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 10px;
-        font-weight: bold;
-      ",
-        "⚠️ TEST DATA MODE: This app is currently using dummy data."
-      )
-      
-    } else {
-      
-      div(
-        style = "
-        background-color: #d4edda;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 10px;
-        font-weight: bold;
-      ",
-        "✓ REAL DATA MODE: This app is connected to the animal database."
-      )
-      
-    }
-    
-  })
-  
-  plot_data <- reactive({
-    
-    req(input$plot_variable)
-    
-    df <- database() %>%
-      mutate(
-        glucose_mg_dl = as.numeric(glucose_mg_dl),
-        neun_count = as.numeric(neun_count),
-        iba1_count = as.numeric(iba1_count)
-      )
-    
-    
-    req(nrow(df) > 0)
-    
-    grouping <- input$group_vars
-    
-    if(length(grouping) == 0){
-      
-      df %>%
-        summarise(
-          mean_value = mean(
-            .data[[input$plot_variable]],
-            na.rm = TRUE
-          )
-        )
-      
-    } else {
-      
-      df %>%
-        group_by(
-          animal_id,
-          across(all_of(grouping))
-        ) %>%
-        summarise(
-          animal_mean = mean(
-            .data[[input$plot_variable]],
-            na.rm = TRUE
-          ),
-          .groups="drop"
-        ) %>%
-        group_by(across(all_of(grouping))) %>%
-        summarise(
-          mean_value = mean(animal_mean, na.rm=TRUE),
-          .groups="drop"
-        )
-      
-    }
-    
-  })
-  
-  iv <- InputValidator$new()
-  
-  iv$add_rule(
-    "animal",
-    sv_required()
-  )
-  
-  iv$add_rule(
-    "glucose",
-    sv_between(0,1000)
-  )
-  
-  iv$enable()
-  
-  data_entry <- reactive({
-    
-    tibble(
-      
-      animal_id = input$animal,
-      sex = as.character(input$sex),
-      id_sex = paste(input$animal, input$sex),
-      
-      dob = as.Date(input$dob),
-      age_weeks = input$age,
-      
-      genotype = input$genotype,
-      
-      treatment_group = paste(
-        input$diabetes_status,
-        input$diet_type,
-        input$diet_length,
-        sep = "-"
+  titlePanel(
+    "Animal Data Plotter"
+  ),
+
+  # ----------------------------------------------------------
+  # Sidebar
+  # ----------------------------------------------------------
+
+  sidebarLayout(
+    sidebarPanel(
+      # ------------------------------------------------------
+      # Step 1: Upload data
+      # ------------------------------------------------------
+
+      h4("1. Upload your data"),
+
+      # The user selects a CSV file from their computer.
+
+      fileInput(
+        inputId = "file",
+        label = "Choose your animal database:",
+        accept = ".xlsx"
       ),
-      
-      time_point = input$diet_length,
-      
-      experiment_start_date = input$exp_start,
-      experiment_end_date = input$exp_end,
-      
-      diabetes_status = input$diabetes_status,
-      glucose_mg_dl = input$glucose,
-      
-      biological_replica = as.numeric(input$biological_replica),
-      
-      diet_group = input$diet_type,
-      diet_start_date = input$diet_start,
-      diet_end_date = input$diet_end,
-      
-      tissue_type = input$tissue,
-      tissue_processing = input$tissue_processing,
-      
-      date_tissue_sectioning = as.Date(NA),
-      
-      region = input$region,
-      
-      image_id = as.character(input$imageid),
-      
-      technical_replica = input$technical_replica,
-      
-      stain_researcher = input$stain_researcher, 
-      stain_completion_date = input$stain_completion_date,
-      
-      imagist = input$imagist,
-      imaging_date = input$imaging_date,
-      
-      iba1_count = input$iba1_count,
-      neun_count = input$NeuN_count,
-      
-      x_confocal = input$x_confocal,
-      y_confocal = input$y_confocal,
-      z_confocal = input$z_confocal,
-      
-      final_neu_n = NA_real_,
-      final_iba1 = NA_real_,
-      
-      notes = input$notes
-      
-    )
-    
-  })
-    
-  glucose_summary <- reactive({
-    
-    database() %>%
-      
-      group_by(
-        animal_id,
-        diabetes_status,
-        diet_group,
-        time_point
-      ) %>%
-      
-      summarise(
-        avg_glucose = mean(as.numeric(glucose_mg_dl), na.rm = TRUE),
-        .groups = "drop"
-      )
-    
-  })
-    
-  neun_summary <- reactive({
-    
-    database() %>%
-      
-      group_by(
-        animal_id,
-        diabetes_status,
-        diet_group,
-        time_point,
-        region
-      ) %>%
-      
-      summarise(
-        avg_neun = mean(as.numeric(neun_count), na.rm = TRUE),
-        .groups = "drop"
-      )
-    
-  })
-    
-  iba1_summary <- reactive({
-    
-    database() %>%
-      
-      group_by(
-        animal_id,
-        diabetes_status,
-        diet_group,
-        time_point,
-        region
-      ) %>%
-      
-      summarise(
-        avg_iba1 = mean(as.numeric(iba1_count), na.rm = TRUE),
-        .groups = "drop"
-      )
-    
-  })
-    
-    
-    
-    
-  
-  output$preview <- renderTable(
-    data_entry()
-  )
-  
-  observeEvent(input$submit,{
-    
-    req(password_correct())
-    
-    req(iv$is_valid())
-    
-    db <- database()
-    
-    new_row <- tibble(
-      
-      animal_id = input$animal,
-      sex = input$sex,
-      id_sex = paste(input$animal, input$sex),
-      
-      dob = as.Date(input$dob),
-      age_weeks = as.numeric(input$age),
-      genotype = input$genotype,
-      
-      treatment_group = paste(
-        input$diabetes_status,
-        input$diet_type,
-        input$diet_length,
-        sep = "-"
+
+      # ------------------------------------------------------
+      # Step 2: Select measurement
+      # ------------------------------------------------------
+
+      h4("2. Choose a measurement"),
+
+      # This dropdown will eventually contain all of the
+      # measurements that the user can choose to plot.
+      #
+      # For now, we will populate it after the user uploads
+      # their data.
+
+      selectInput(
+        inputId = "outcome",
+        label = "Measurement:",
+        choices = NULL
       ),
-      
-      time_point = input$diet_length,
-      
-      experiment_start_date = as.Date(input$exp_start),
-      experiment_end_date = as.Date(input$exp_end),
-      
-      diabetes_status = input$diabetes_status,
-      glucose_mg_dl = as.numeric(input$glucose),
-      
-      biological_replica = as.numeric(input$biological_replica),
-      
-      diet_group = input$diet_type,
-      diet_start_date = as.Date(input$diet_start),
-      diet_end_date = as.Date(input$diet_end),
-      
-      tissue_type = input$tissue,
-      tissue_processing = input$tissue_processing,
-      date_tissue_sectioning = as.Date(NA),
-      
-      region = input$region,
-      image_id = as.character(input$imageid),
-      technical_replica = input$technical_replica,
-      
-      stain_researcher = input$stain_researcher,
-      stain_completion_date = as.Date(input$stain_completion_date),
-      
-      imagist = input$imagist,
-      imaging_date = as.Date(input$imaging_date),
-      
-      iba1_count = as.numeric(input$iba1_count),
-      neun_count = as.numeric(input$NeuN_count),
-      
-      x_confocal = as.numeric(input$x_confocal),
-      y_confocal = as.numeric(input$y_confocal),
-      z_confocal = as.numeric(input$z_confocal),
-      
-      final_neu_n = NA_real_,
-      final_iba1 = NA_real_,
-      
-      notes = as.character(input$notes)
-      
-    )
-    
-    new_row <- new_row %>%
-      mutate(
-        across(
-          c(animal_id, sex, id_sex, genotype, treatment_group,
-            time_point, diabetes_status, diet_group,
-            tissue_type, tissue_processing, region,
-            technical_replica, stain_researcher,
-            imagist, notes),
-          as.character
-        )
+
+      # ------------------------------------------------------
+      # Step 3: Generate plot
+      # ------------------------------------------------------
+
+      actionButton(
+        inputId = "generate_plot",
+        label = "Generate Plot",
+        class = "btn-primary"
+      ),
+
+      br(),
+      br(),
+
+      # ------------------------------------------------------
+      # Download cleaned data
+      # ------------------------------------------------------
+
+      downloadButton(
+        outputId = "download_cleaned",
+        label = "Download Cleaned Data"
+      ),
+
+      br(),
+      br(),
+
+      # ------------------------------------------------------
+      # Download plot
+      # ------------------------------------------------------
+
+      downloadButton(
+        outputId = "download_plot",
+        label = "Download Plot"
       )
-    
-    db <- bind_rows(
-      database(),
-      new_row
-    )
-    
-    database(db)
-    
-    write.csv(
-      db,
-      "data/animal_database_clean.csv",
-      row.names = FALSE
-    )
-    
-    showNotification("Record saved!")
-    
-  })
-    
-  
-  output$glucose_table <- renderTable({
-    glucose_summary()
-  })
-  
-  output$neun_table <- renderTable({
-    neun_summary()
-  })
-  
-  output$iba1_table <- renderTable({
-    iba1_summary()
-  })
-  
-  output$summary_plot <- renderPlot({
-    
-    df <- plot_data()
-    
-    req(nrow(df) > 0)
-    
-    groups <- input$group_vars
-    
-    if(length(groups) == 0){
-      
-      ggplot(df,
-             aes(x = "All", y = mean_value)) +
-        geom_col() +
-        labs(
-          x = "",
-          y = "Mean"
-        )
-      
-    } else {
-      
-      df$Group <- apply(
-        df[, groups, drop = FALSE],
-        1,
-        paste,
-        collapse = " | "
+    ),
+
+    # ----------------------------------------------------------
+    # Main panel
+    # ----------------------------------------------------------
+
+    mainPanel(
+      # --------------------------------------------------------
+      # Data summary
+      # --------------------------------------------------------
+
+      h3("Data Summary"),
+
+      verbatimTextOutput(
+        outputId = "data_summary"
+      ),
+
+      hr(),
+
+      # --------------------------------------------------------
+      # Plot
+      # --------------------------------------------------------
+
+      h3("Plot"),
+
+      plotOutput(
+        outputId = "animal_plot",
+        height = "700px"
       )
-      
-      ggplot(df,
-             aes(
-               x = reorder(Group, mean_value),
-               y = mean_value
-             )) +
-        geom_col() +
-        coord_flip() +
-        labs(
-          x = "",
-          y = "Mean",
-          title = paste(
-            "Average",
-            input$plot_variable
-          )
-        ) +
-        theme_bw()
-      
+    )
+  )
+)
+
+
+# ============================================================
+# SERVER
+# ============================================================
+
+server <- function(input, output, session) {
+  # ==========================================================
+  # STEP 1: Read the uploaded file
+  # ==========================================================
+
+  # reactive() creates an object that automatically updates
+  # whenever the user uploads a different file.
+  #
+  # req(input$file) tells Shiny:
+  #
+  #     "Do not try to run this code until the user has
+  #      uploaded a file."
+
+  uploaded_data <- reactive({
+    req(input$file)
+
+    readxl::read_excel(
+      input$file$datapath
+    )
+  })
+
+  # ==========================================================
+  # STEP 2: Clean the uploaded data
+  # ==========================================================
+
+  # Once the user uploads a file, send it through the
+  # standardization function we created earlier.
+  #
+  # The result is a cleaned dataset that we can use for
+  # analysis and plotting.
+
+  cleaned_data <- reactive({
+    standardize_animal_data(
+      uploaded_data()
+    )
+  })
+
+  # ==========================================================
+  # STEP 3: Determine which measurements are available
+  # ==========================================================
+
+  # After the data have been cleaned, we look for numeric
+  # columns that could potentially be plotted.
+  #
+  # This means the user does NOT have to know the R column
+  # names.
+  #
+  # For example, we could eventually display:
+  #
+  #     NeuN count
+  #     Iba1 count
+  #     Glucose
+  #
+  # instead of:
+  #
+  #     final_neu_n
+  #     final_iba1
+  #     glucose_mg_dl
+
+  observeEvent(
+    cleaned_data(),
+    {
+      # Find all numeric columns.
+
+      numeric_columns <- names(
+        cleaned_data()
+      )[
+        vapply(
+          cleaned_data(),
+          is.numeric,
+          logical(1)
+        )
+      ]
+
+      # Update the measurement dropdown.
+
+      updateSelectInput(
+        session = session,
+        inputId = "outcome",
+        choices = numeric_columns
+      )
     }
-    
+  )
+
+  # ==========================================================
+  # STEP 4: Create a data summary
+  # ==========================================================
+
+  # Show the user some basic information about the uploaded
+  # and cleaned data.
+
+  output$data_summary <- renderPrint({
+    req(cleaned_data())
+
+    data <- cleaned_data()
+
+    cat(
+      "Number of rows:",
+      nrow(data),
+      "\n"
+    )
+
+    cat(
+      "Number of animals:",
+      n_distinct(data$animal_id),
+      "\n"
+    )
+
+    cat(
+      "Regions:",
+      paste(
+        unique(data$region),
+        collapse = ", "
+      ),
+      "\n"
+    )
+
+    cat(
+      "Diets:",
+      paste(
+        unique(data$diet_group),
+        collapse = ", "
+      ),
+      "\n"
+    )
+
+    cat(
+      "Time points:",
+      paste(
+        unique(data$time_point),
+        collapse = ", "
+      ),
+      "\n"
+    )
   })
-  
-  output$download_data <- downloadHandler(
-    
+
+  # ==========================================================
+  # STEP 5: Generate the plot
+  # ==========================================================
+
+  # eventReactive() means that the plot is only regenerated
+  # when the user clicks "Generate Plot".
+  #
+  # This prevents the plot from changing every time something
+  # else in the app changes.
+
+  plot_data <- eventReactive(
+    input$generate_plot,
+    {
+      req(
+        cleaned_data(),
+        input$outcome
+      )
+
+      # Send the cleaned data and selected measurement
+      # to our plotting function.
+
+      make_animal_plot(
+        data = cleaned_data(),
+        outcome = input$outcome
+      )
+    }
+  )
+
+  # ==========================================================
+  # STEP 6: Display the plot
+  # ==========================================================
+
+  output$animal_plot <- renderPlot({
+    req(plot_data())
+
+    plot_data()
+  })
+
+  # ==========================================================
+  # STEP 7: Allow user to download cleaned data
+  # ==========================================================
+
+  output$download_cleaned <- downloadHandler(
     filename = function() {
       paste0(
-        "animal_database_",
+        "animal_database_cleaned_",
         Sys.Date(),
         ".csv"
       )
     },
-    
+
     content = function(file) {
-      
-      write.csv(
-        database(),
-        file,
-        row.names = FALSE
+      write_csv(
+        cleaned_data(),
+        file
       )
-      
     }
-    
   )
-  
+
+  # ==========================================================
+  # STEP 8: Allow user to download the plot
+  # ==========================================================
+
+  output$download_plot <- downloadHandler(
+    filename = function() {
+      paste0(
+        input$outcome,
+        "_plot_",
+        Sys.Date(),
+        ".png"
+      )
+    },
+
+    content = function(file) {
+      ggsave(
+        filename = file,
+        plot = plot_data(),
+        width = 10,
+        height = 7,
+        dpi = 300
+      )
+    }
+  )
 }
 
-shinyApp(ui, server)
+
+# ============================================================
+# RUN THE APPLICATION
+# ============================================================
+
+shinyApp(
+  ui = ui,
+  server = server
+)
