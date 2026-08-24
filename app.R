@@ -4,7 +4,7 @@
 #
 # This Shiny app allows a user to:
 #
-#   1. Upload an animal database CSV
+#   1. Upload an animal database xlsx
 #   2. Automatically clean and standardize the data
 #   3. Choose which measurement to plot
 #   4. Generate a plot
@@ -38,6 +38,69 @@ ui <- fluidPage(
 
   titlePanel(
     "Animal Data Plotter"
+  ),
+
+  # ----------------------------------------------------------
+  # About this app (always visible)
+  # ----------------------------------------------------------
+
+  wellPanel(
+    p(
+      "This app allows you to upload a dataset,",
+      "automatically standardize the data, and create plots for analysis.",
+      "The goal is to go from an experimental spreadsheet to a",
+      "consistent plot without manually cleaning or aggregating",
+      "the data each time."
+    ),
+
+    h5("How to use the app"),
+    tags$ol(
+      tags$li(
+        "Prepare your data using the ",
+        tags$code("Data_template-v3.1-ac.xlsx"),
+        " template."
+      ),
+      tags$li(
+        "Upload your ",
+        tags$code(".xlsx"),
+        " file."
+      ),
+      tags$li("Select a variable from the dropdown."),
+      tags$li("Click ", tags$strong("Generate Plot"), "."),
+      tags$li(
+        "Download the cleaned data or plot as needed."
+      )
+    ),
+
+    h5(
+      "The code for this app is on GitHub. Many customizations are possible:"
+    ),
+    tags$ul(
+      tags$li(
+        "To rename a column or change a data type, edit ",
+        tags$a(
+          "standardize_animal_data.R",
+          href = "https://github.com/hannaheow/cardona_lab/blob/main/standarize_data.R",
+          target = "_blank"
+        )
+      ),
+      tags$li(
+        "To change plot colors, labels, grouping, or error bars, edit ",
+        tags$a(
+          "make_animal_plot.R",
+          href = "https://github.com/hannaheow/cardona_lab/blob/main/R/make_animal_plot.R",
+          target = "_blank"
+        )
+      ),
+      tags$li(
+        "To change the app interface or file upload behavior, edit ",
+        tags$a(
+          "app.R",
+          href = "https://github.com/hannaheow/cardona_lab/blob/main/app.R",
+          target = "_blank"
+        )
+      )
+    )
   ),
 
   # ----------------------------------------------------------

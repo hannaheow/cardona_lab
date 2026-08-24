@@ -362,6 +362,26 @@ make_animal_plot <- function(
       strip.text = element_text(
         face = "bold"
       )
+    ) +
+
+    # --------------------------------------------------------
+    # Color scales
+    # --------------------------------------------------------
+
+    # Diet fill: purple tones for bars
+    scale_fill_manual(
+      values = c(
+        "dox_diet" = "#7B68EE", # medium slate blue
+        "normal_diet" = "#20B2AA" # light sea green
+      )
+    ) +
+
+    # Sex color: warm tones for dots, distinct from fill
+    scale_color_manual(
+      values = c(
+        "F" = "#E8735A", # terracotta orange
+        "M" = "#F2C14E" # golden yellow
+      )
     )
 
   # ==========================================================
