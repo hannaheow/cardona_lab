@@ -3699,21 +3699,21 @@
   },
   "files": {
     ".posit/publish/cardona_lab-QL2N.toml": {
-      "checksum": "813c9d9e5f3e45660f28e6e95cbbf04d"
+      "checksum": "14fe88010c6eb81ceeb27e41a4e21fc5"
     },
     ".posit/publish/deployments/deployment-0QTV.toml": {
-      "checksum": "2f8ad9e170c58319a9713b8cbd903251"
+      "checksum": "4d927a86fdaff7b37350d112af24b73f"
     },
     ".Renviron": {
       "checksum": "6301111c03e191b0e73db0206abbd9b3"
     },
     "app.R": {
-      "checksum": "2f85f0668fa799b65d7605a99e212d4c"
+      "checksum": "313a9741966b75e42790924562af92e5"
     },
     "R/make_animal_plot.R": {
-      "checksum": "2983e1b8f980f08d4e0e885af703fad3"
+      "checksum": "00d3cb11c046b4cd163089081b2081ec"
     },
-    "R/standarize_animal_data.R": {
+    "R/standardize_animal_data.R": {
       "checksum": "a6ec810354ee574435bcf0576fdf7c7c"
     },
     "README.md": {
